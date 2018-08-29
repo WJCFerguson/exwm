@@ -669,21 +669,22 @@ for internal use only."
               (make-instance 'xcb:QueryPointer
                              :window (frame-parameter frame
                                                       'exwm-outer-id)))
-        (when (or (< win-x 0)
-                  (< win-y 0)
-                  (> win-x (frame-pixel-width frame))
-                  (> win-y (frame-pixel-height frame)))
-          (xcb:+request exwm--connection
-              (make-instance 'xcb:WarpPointer
-                             :src-window xcb:Window:None
-                             :dst-window (frame-parameter frame
-                                                          'exwm-outer-id)
-                             :src-x 0
-                             :src-y 0
-                             :src-width 0
-                             :src-height 0
-                             :dst-x (/ (frame-pixel-width frame) 2)
-                             :dst-y (/ (frame-pixel-height frame) 2)))
+        (let ((edges (window-pixel-edges window)))
+          (when (or (< win-x (nth 0 edges))
+                    (< win-y (nth 1 edges))
+                    (> win-x (nth 2 edges))
+                    (> win-y (nth 3 edges)))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:WarpPointer
+                               :src-window xcb:Window:None
+                               :dst-window (frame-parameter frame
+                                                            'exwm-outer-id)
+                               :src-x 0
+                               :src-y 0
+                               :src-width 0
+                               :src-height 0
+                               :dst-x (/ (+ (nth 0 edges) (nth 2 edges)) 2)
+                               :dst-y (/ (+ (nth 1 edges) (nth 3 edges)) 2))))
           (xcb:flush exwm--connection))))
     (funcall exwm-workspace--original-handle-focus-in (list 'focus-in frame))
     (run-hooks 'exwm-workspace-switch-hook)))
